@@ -64,34 +64,34 @@ class GLXPlatform : public GLPlatform
 
     ret.ctx = NULL;
 
-    if(!GLX.glXCreateContext)
+    if(!GLX.glXCreateContextAttribsARB)
       return ret;
 
     bool is_direct = false;
+    const int attribs[] = {
+      GLX_CONTEXT_MAJOR_VERSION_ARB,
+      3,
+      GLX_CONTEXT_MINOR_VERSION_ARB,
+      2,
+      GLX_CONTEXT_FLAGS_ARB,
+      0,
+      GLX_CONTEXT_PROFILE_MASK_ARB,
+      GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+      0,
+      0,
+    };
 
     if(GLX.glXIsDirect)
       is_direct = GLX.glXIsDirect(share.dpy, share.ctx);
 
-    XVisualInfo *cfg = share.cfg;
+    static int visAttribs[] = {0};
+    int numCfgs = 0;
+    GLXFBConfig *fbcfg =
+      GLX.glXChooseFBConfig(share.dpy, DefaultScreen(share.dpy), visAttribs, &numCfgs);
 
-    if(cfg == NULL)
-    {
-      static int visAttribs[] = {0};
-      int numCfgs = 0;
-      GLXFBConfig *fbcfg =
-          GLX.glXChooseFBConfig(share.dpy, DefaultScreen(share.dpy), visAttribs, &numCfgs);
+    ret.ctx = GLX.glXCreateContextAttribsARB(share.dpy, fbcfg[0], share.ctx, is_direct, attribs);
 
-      cfg = GLX.glXGetVisualFromFBConfig(share.dpy, fbcfg[0]);
-
-      XFree(fbcfg);
-    }
-
-    ret.ctx = GLX.glXCreateContext(share.dpy, cfg, share.ctx, is_direct);
-
-    if(cfg != share.cfg)
-    {
-      XFree(cfg);
-    }
+    XFree(fbcfg);
 
     return ret;
   }
